@@ -38,11 +38,31 @@ const fileSchema = new mongoose.Schema({
   },
   name: {
     type: String,
-    require: true,
+    required: true,
+  },
+  path: {
+    type: String,
+    required: true,
   },
 });
 
 const File = mongoose.model('File', fileSchema);
+
+const createAndSaveFile = (filename, path) => {
+  const file = new File({
+    name: filename,
+    path: path,
+  });
+
+  return file
+    .save()
+    .then(() => {
+      return { successMsg: 'File was successfully saved' };
+    })
+    .catch((err) => {
+      return { error: err };
+    });
+};
 
 app.get('/', (req, res) => {
   res.sendFile(process.cwd() + '/views/index.html');
@@ -50,7 +70,14 @@ app.get('/', (req, res) => {
 
 app.post('/api/fileanalyse', (req, res) => {
   const file = req.file;
-  res.json({ name: file.originalname, type: file.mimetype, size: file.size });
+
+  createAndSaveFile(file.originalname, file.path)
+    .then(() => {
+      return res.json({ name: file.originalname, type: file.mimetype, size: file.size });
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 });
 
 const port = process.env.PORT || 3000;
