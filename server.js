@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const cors = require('cors');
 
+const fileController = require('./controllers/file');
+
 require('dotenv').config();
 
 const app = express();
@@ -31,39 +33,6 @@ app.use(uploadFile.single('upfile'));
 app.use('/public', express.static(process.cwd() + '/public'));
 app.use(bodyParser.urlencoded({ urlencoded: false }));
 
-const fileSchema = new mongoose.Schema({
-  createdAt: {
-    type: Date,
-    default: Date.now(),
-  },
-  name: {
-    type: String,
-    required: true,
-  },
-  path: {
-    type: String,
-    required: true,
-  },
-});
-
-const File = mongoose.model('File', fileSchema);
-
-const createAndSaveFile = (filename, path) => {
-  const file = new File({
-    name: filename,
-    path: path,
-  });
-
-  return file
-    .save()
-    .then(() => {
-      return { successMsg: 'File was successfully saved' };
-    })
-    .catch((err) => {
-      return { error: err };
-    });
-};
-
 app.get('/', (req, res) => {
   res.sendFile(process.cwd() + '/views/index.html');
 });
@@ -71,7 +40,8 @@ app.get('/', (req, res) => {
 app.post('/api/fileanalyse', (req, res) => {
   const file = req.file;
 
-  createAndSaveFile(file.originalname, file.path)
+  fileController
+    .createAndSaveFile(file.originalname, file.path)
     .then(() => {
       return res.json({ name: file.originalname, type: file.mimetype, size: file.size });
     })
@@ -81,6 +51,7 @@ app.post('/api/fileanalyse', (req, res) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, function () {
+
+app.listen(port, () => {
   console.log('Your app is listening on port ' + port);
 });
